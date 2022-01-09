@@ -1,5 +1,3 @@
-# https://www.youtube.com/watch?v=coZbOM6E47I&t=1288s
-# 
 # https://google-api-client-libraries.appspot.com/documentation/youtube/v3/python/latest/index.html
 # TODO auto-rescan after 15 mins a new video is added to the playlist, and send an e-mail
 # https://developers.google.com/youtube/v3/docs/videos/list
@@ -13,7 +11,9 @@ max_backups = 5
 
 today = datetime.datetime.now()
 
-# add your YouTube dev api key here instead of os.environ['api_key']
+# add a secrets file in Replit called api_key 
+# (Secrets are found on the left side of your replit workspace, the little padlock icon)
+# the value should be your YouTube developer api key
 api_key = os.environ['api_key']
 
 youtube = build('youtube', 'v3', developerKey=api_key)
@@ -25,7 +25,8 @@ print("Requesting YouTube playlist data...")
 while True:
 	pl_request = youtube.playlistItems().list(
 		part='contentDetails, snippet, status',
-		#playlistId='PLHHR3ttLRhvnph5Z1WCdyrCv1BDu9okR0',
+		# Insert your playlist ID here, this comes after the /playlist?list=
+		# Use small playlists ~3 videos for testing, because YouTube has an API request limit!
 		playlistId='PLHHR3ttLRhvlpgSWJvBILXscHZv2KoZj6',
 		maxResults=50,
 		pageToken=nextPageToken
@@ -129,9 +130,10 @@ removed_dupe = removed.copy()
 added = list(sorted(set2 - set1))
 added_dupe = added.copy()
 
-# Missing != added, but would count as added because of the different title
+# Missing DOES NOT EQUAL added, but would count as added because of the title changes to Deleted/Privated video
 # E.g. 	  ('zbGByNBfFyQ', 'Test', 'public') 
 # Becomes ('zbGByNBfFyQ', 'Deleted video', 'UnspecifiedStatus')
+# Seperate missing/added videos into the right lists
 indices = []
 for idx, add in enumerate(added):
 	for miss in missing:
@@ -141,8 +143,8 @@ for i in sorted(indices, reverse=True):
 	del added_dupe[i]
 added = added_dupe
 
-# Missing != removed, but still counts old_list/new_list discrepancies
-# Seperating this to differentiate deleted/unlisted videos from videos removed from the playlist itself
+# Missing DOES NOT EQUAL removed, but still counts as old_list/new_list discrepancies
+# Seperating this to differentiate deleted/unlisted videos from videos removed from the playlist by the playlist owner
 # E.g. 	  ('zbGByNBfFyQ', 'Thicc', 'public') 
 # Becomes ('zbGByNBfFyQ', 'Deleted video', '('zbGByNBfFyQ', 'Thicc', 'public')')
 indices = []
@@ -157,6 +159,7 @@ removed = removed_dupe
 print("\nScan complete!\n")
 data_collected = []
 
+# Put videos with state changes in the right categories
 if missing != []:
 	is_missing = ["Missing videos: ", missing]
 	data_collected.append(is_missing)
@@ -188,14 +191,16 @@ if added != []:
 
 if removed == [] and added == [] and missing == [] and relisted == []:
 	print("This scan was identical to the last scan, meaning there were no changes to the playlist whatsoever!")
+	# Not making a Retrieve Data file here > There are no results
 else:
 	with open('Retrieved Data/{}.json'.format(today), 'w') as f:
 		json.dump(data_collected, f, indent=4)
 
-# rename scan to old, so the next run checks today's scan.
+
+# rename newScan to oldScan, so the next scan in the future compares itself to what we just scanned a moment ago.
 os.rename('newScan.json', 'oldScan.json')
 # create new scan file for the next run to overwrite 
-# (could also be an empty list)
+# (could also dump an empty list, but I put new_list for good measure)
 with open('newScan.json', 'w') as f:
 	json.dump(new_list, f, indent=4)
 
