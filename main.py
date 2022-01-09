@@ -13,8 +13,7 @@ max_backups = 5
 
 today = datetime.datetime.now()
 
-# add your YouTube dev api key here
-# instead of os.environ[] <-- this is for Replit
+# add your YouTube dev api key here instead of os.environ['api_key']
 api_key = os.environ['api_key']
 
 youtube = build('youtube', 'v3', developerKey=api_key)
